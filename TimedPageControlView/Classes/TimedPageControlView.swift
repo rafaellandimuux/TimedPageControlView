@@ -48,13 +48,28 @@ public enum ScrollDirection {
     var spacing: CGFloat = 3
     var totalPages: Int
     var _loaded = false
+    var useSameSizeWidht = false
     public var scrollDirection: ScrollDirection?
+    
+    
+    public init(collapsedWidth: CGFloat!, expandedWidth: CGFloat!, total: Int, useSameSize: Bool) {
+        totalPages = total
+        self.collapsedWidth = collapsedWidth
+        self.expandedWidth = expandedWidth
+        super.init(frame: CGRect.zero)
+        self.useSameSizeWidht = useSameSize
+        self.commoninit(collapsedWidth: collapsedWidth, total: total)
+    }
+    
     
     public init(collapsedWidth: CGFloat!, total: Int) {
         totalPages = total
         self.collapsedWidth = collapsedWidth
         super.init(frame: CGRect.zero)
-        
+        self.commoninit(collapsedWidth: collapsedWidth, total: total)
+    }
+    
+    func commoninit(collapsedWidth: CGFloat!, total: Int) {
         for index in 0...totalPages - 1 {
             let page: TimedPageButton = createPageAnchor(index: index)
             page.translatesAutoresizingMaskIntoConstraints = false
@@ -87,9 +102,10 @@ public enum ScrollDirection {
         }
     }
     
+    
     override public func layoutSubviews() {
         if (!_loaded) {
-            expandedWidth = frame.size.width - totalWidthCollapsed + collapsedWidth
+            expandedWidth = (self.useSameSizeWidht == false) ? frame.size.width - totalWidthCollapsed + collapsedWidth : expandedWidth
             updateConstraintsForPageAnchors(targetViewIndex: 0, percentComplete: 1)
             _loaded = true
         }
@@ -116,14 +132,16 @@ public enum ScrollDirection {
         let timedPageButtonSubviews = subviews.filter{ $0 is TimedPageButton } as! [TimedPageButton]
         
         for (index, item) in widthConstraints.enumerated() {
+            
+            
             if (index == targetViewIndex) {
-                item?.constant = ensureAppropriateWidth(width: expandedWidth * percentComplete)
+                item?.constant = (self.useSameSizeWidht == false) ? ensureAppropriateWidth(width: expandedWidth * percentComplete) : ensureAppropriateWidth(width: expandedWidth)
                 timedPageButtonSubviews[index].progressLayer.opacity = Float(1) * Float(percentComplete)
             } else if (scrollDirection == .right && index == targetViewIndex + 1 || scrollDirection == .left && index == targetViewIndex + 1) {
-                item?.constant = ensureAppropriateWidth(width: collapsedWidth + expandedWidth * (1 - percentComplete))
+                item?.constant = (self.useSameSizeWidht == false) ? ensureAppropriateWidth(width: collapsedWidth + expandedWidth * (1 - percentComplete)) : ensureAppropriateWidth(width: expandedWidth)
                 timedPageButtonSubviews[index].progressLayer.opacity = Float(1) * Float(1 - percentComplete)
             } else {
-                item?.constant = ensureAppropriateWidth(width: collapsedWidth)
+                item?.constant = (self.useSameSizeWidht == false) ? ensureAppropriateWidth(width: collapsedWidth) : ensureAppropriateWidth(width: expandedWidth)
                 timedPageButtonSubviews[index].progressLayer.opacity = 0
             }
         }
